@@ -1,0 +1,72 @@
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+task androidSourcesJar(type: Jar) {
+    archiveClassifier.set('sources')
+    if (project.plugins.findPlugin("com.android.library")) {
+        from android.sourceSets.main.java.srcDirs
+        from android.sourceSets.main.kotlin.srcDirs
+    } else {
+        from sourceSets.main.java.srcDirs
+        from sourceSets.main.kotlin.srcDirs
+    }
+}
+
+artifacts {
+    archives androidSourcesJar
+}
+
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                groupId findProperty('PUBLISH_GROUP_ID')
+                artifactId findProperty('PUBLISH_ARTIFACT_ID')
+                version findProperty('PUBLISH_VERSION')
+                if (project.plugins.findPlugin("com.android.library")) {
+                    from components.release
+                } else {
+                    from components.java
+                }
+
+                artifact androidSourcesJar
+
+                pom {
+                    name = findProperty('PUBLISH_ARTIFACT_ID')
+                    description = 'Library build testing SDK'
+                    url = 'https://github.com/hoangdat6353/LibraryBuilding'
+
+                    developers {
+                        developer {
+                            id = 'neon.n'
+                            name = 'Neon Nguyen'
+                            email = 'hoangdat6353@gmail.com'
+                        }
+                    }
+                    licenses {
+                        license {
+                            name = 'The MIT License'
+                            url = 'https://opensource.org/licenses/MIT'
+                        }
+                    }
+                    scm {
+                        connection = 'scm:git:github.com/hoangdat6353/LibraryBuilding.git'
+                        developerConnection = 'scm:git:ssh://github.com/hoangdat6353/LibraryBuilding.git'
+                        url = 'https://github.com/hoangdat6353/LibraryBuilding'
+                    }
+                }
+            }
+        }
+    }
+}
+
+signing {
+    useGpgCmd()
+    useInMemoryPgpKeys(
+            project.properties['SIGNING_KEY_ID'],
+            project.properties['SIGNING_KEY'],
+            project.properties['SIGNING_PASSWORD']
+    )
+    sign publishing.publications
+}
